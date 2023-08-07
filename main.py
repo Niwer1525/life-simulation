@@ -54,6 +54,16 @@ class RedObject:
         x2, y2 = self.x + 10 * self.size, self.y + 10 * self.size
         canvas.create_oval(x1, y1, x2, y2, fill="#7e2520", outline="#7e2520")
 
+# This allow to randomize the color for children
+def blend_colors(color1, color2):
+    r1, g1, b1 = tk.Color(color1).rgb
+    r2, g2, b2 = tk.Color(color2).rgb
+    blended_r = (r1 + r2) // 2
+    blended_g = (g1 + g2) // 2
+    blended_b = (b1 + b2) // 2
+    return f'#{blended_r:02x}{blended_g:02x}{blended_b:02x}'
+
+
 # A class that represnets an animal
 class Animal:
     def __init__(self, x, y, color):
@@ -156,7 +166,7 @@ def update_simulation():
             # Reproduction
             for entity_reporduction in entities:
                 if entity != entity_reporduction and collision(entity, entity_reporduction) and entity.hunger < 10 and entity_reporduction.hunger < 10 and random.randint(0, 100) < 5:
-                    entities.append(Animal(entity.x + 5, entity.y + 5, "white")) # Reproduce
+                    entities.append(Animal(entity.x + 5, entity.y + 5, blend_colors(entity.color, entity_reporduction.color))) # Reproduce
 
             # Eating
             for b_obj in blue_objects:
@@ -199,8 +209,9 @@ def start_simulation():
     for _ in range(30): red_objects.append(RedObject(random.randint(0, CANVAS_WIDTH), random.randint(0, CANVAS_HEIGHT)))
 
     # Adding entities to the list
+    available_colors = ["white", "magenta", "green"]
     for _ in range(5):
-        entities.append(Animal(x=(CANVAS_WIDTH/2) * random.random(), y=(CANVAS_HEIGHT/2) * random.random(), color="white"))
+        entities.append(Animal(x=(CANVAS_WIDTH/2) * random.random(), y=(CANVAS_HEIGHT/2) * random.random(), color=random.choice(available_colors)))
 
     # Updating the simulation
     update_simulation()
