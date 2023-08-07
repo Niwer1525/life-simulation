@@ -78,6 +78,7 @@ class Animal:
         self.age = 0
         # hereditary caracteristics
         self.color = color;
+        self.size = 1;
 
     def move(self):
         # Prevent borders touching
@@ -106,8 +107,8 @@ class Animal:
 
     def drawSelected(self):
         global canvas
-        x1, y1 = self.x - 15, self.y - 15
-        x2, y2 = self.x + 15, self.y + 15
+        x1, y1 = self.x - 10 * self.size, self.y - 10 * self.size
+        x2, y2 = self.x + 10 * self.size, self.y + 10 * self.size
         create_rectangle(x1, y1, x2, y2, fill="#f0b132", alpha=.5)
 
 result_label = tk.Label(app, bg="#313338", fg="white", text="Press the button to start the simulation")
@@ -135,8 +136,8 @@ def on_canvas_click(event):
 
 # Checking if two objects are colliding
 def collision(obj1, obj2):
-    obj1_x1, obj1_y1, obj1_x2, obj1_y2 = obj1.x - 10, obj1.y - 10, obj1.x + 10, obj1.y + 10
-    obj2_x1, obj2_y1, obj2_x2, obj2_y2 = obj2.x - 10, obj2.y - 10, obj2.x + 10, obj2.y + 10
+    obj1_x1, obj1_y1, obj1_x2, obj1_y2 = obj1.x - 10 * obj1.size, obj1.y - 10 * obj1.size, obj1.x + 10 * obj1.size, obj1.y + 10 * obj1.size
+    obj2_x1, obj2_y1, obj2_x2, obj2_y2 = obj2.x - 10 * obj2.size, obj2.y - 10 * obj2.size, obj2.x + 10 * obj2.size, obj2.y + 10 * obj2.size
     if obj1_x1 < obj2_x2 and obj1_x2 > obj2_x1 and obj1_y1 < obj2_y2 and obj1_y2 > obj2_y1: return True
     else: return False
 
