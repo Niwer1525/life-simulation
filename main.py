@@ -10,21 +10,10 @@ app.resizable(False, False)
 app.configure(bg="#313338")
 
 simulation_running = False
+simulation_paused = False
 canvas = None
 CANVAS_WIDTH = 1000
 CANVAS_HEIGHT = 500
-
-#
-def create_rectangle(x1, y1, x2, y2, **kwargs):
-    global canvas
-    if 'alpha' in kwargs:
-        alpha = int(kwargs.pop('alpha') * 255)
-        fill = kwargs.pop('fill')
-        fill = app.winfo_rgb(fill) + (alpha,)
-        image = Image.new('RGBA', (x2-x1, y2-y1), fill)
-        images.append(ImageTk.PhotoImage(image))
-        canvas.create_image(x1, y1, image=images[-1], anchor='nw')
-    canvas.create_rectangle(x1, y1, x2, y2, **kwargs)
 
 # The food class
 class BLueObject:
@@ -109,7 +98,7 @@ class Animal:
         global canvas
         x1, y1 = self.x - 10 * self.size, self.y - 10 * self.size
         x2, y2 = self.x + 10 * self.size, self.y + 10 * self.size
-        create_rectangle(x1, y1, x2, y2, fill="#f0b132", alpha=.5)
+        canvas.create_rectangle(x1, y1, x2, y2, fill="#f0b132")
 
 result_label = tk.Label(app, bg="#313338", fg="white", text="Press the button to start the simulation")
 result_label.pack()
@@ -141,10 +130,37 @@ def collision(obj1, obj2):
     if obj1_x1 < obj2_x2 and obj1_x2 > obj2_x1 and obj1_y1 < obj2_y2 and obj1_y2 > obj2_y1: return True
     else: return False
 
-def update_simulation():
-    if simulation_running:
-        global selectedEntity
+# Calculating the distance to another entity
+def calculate_distance(entity, target_entity):
+    target_x, target_y = target_entity.x, target_entity.y
+    direction_x = target_x - entity.x
+    direction_y = target_y - entity.y
+    magnitude = (direction_x ** 2 + direction_y ** 2) ** 0.5
 
+    return magnitude
+
+def update_selecing():
+    global selectedEntity
+
+    # User interface
+    result_label.config(text="Simulation started (Bad food:"+str(len(red_objects))+", Food:"+str(len(blue_objects))+", Entities :" + str(len(entities)) + ", GEN :"+ str(0) +")")
+
+    # Allow selecting/unselecting entity
+    if selectedEntity is not None:
+        info_text = f"Entity Info:\nAge: {selectedEntity.age}\nHealth: {selectedEntity.health}\nHunger: {selectedEntity.hunger}"
+        info_label.config(text=info_text)
+        selectedEntity.drawSelected()
+
+
+def update_simulation():
+    global selectedEntity
+
+    if simulation_paused:
+        update_selecing()
+        app.after(100, update_simulation)
+        return
+
+    if simulation_running:
         # Reset canvas
         canvas.delete("all")
 
@@ -166,8 +182,11 @@ def update_simulation():
 
             # Reproduction
             for entity_reporduction in entities:
-                if entity != entity_reporduction and collision(entity, entity_reporduction) and entity.hunger < 10 and entity_reporduction.hunger < 10 and random.randint(0, 100) < 5:
-                    entities.append(Animal(entity.x + 5, entity.y + 5, blend_colors(entity.color, entity_reporduction.color))) # Reproduce
+                if entity != entity_reporduction and entity.hunger < 10 and entity_reporduction.hunger < 10 and calculate_distance(entity, entity_reporduction) == 0:
+                    if collision(entity, entity_reporduction) and random.randint(0, 100) < 5:
+                        entity.hunger += 10 # Increase the hunger
+                        entity_reporduction.hunger += 10 # Increase the hunger
+                        entities.append(Animal(entity.x + 5, entity.y + 5, blend_colors(entity.color, entity_reporduction.color))) # Reproduce
 
             # Eating
             for b_obj in blue_objects:
@@ -181,14 +200,8 @@ def update_simulation():
                     entity.damage(r_obj.size) # Damage the entity
                     red_objects.remove(r_obj)
 
-        # User interface
-        result_label.config(text="Simulation started (Bad food:"+str(len(red_objects))+", Food:"+str(len(blue_objects))+", Entities :" + str(len(entities)) + ", GEN :"+ str(0) +")")
         app.after(100, update_simulation) # Repeat after 100 ms
-    
-        if selectedEntity is not None:
-            info_text = f"Entity Info:\nAge: {selectedEntity.age}\nHealth: {selectedEntity.health}\nHunger: {selectedEntity.hunger}"
-            info_label.config(text=info_text)
-            selectedEntity.drawSelected()
+        update_selecing()
 
 def start_simulation():
     # Checking if the simulation is already running
@@ -217,5 +230,12 @@ def start_simulation():
     # Updating the simulation
     update_simulation()
 
+def pause_simulation(event):
+    global simulation_paused
+    simulation_paused = not simulation_paused
+    if simulation_paused: print("Simulation paused")
+    else: print("Simulation resumed")
+
 start_button.config(command=start_simulation)
+app.bind("<space>", pause_simulation)
 app.mainloop()
