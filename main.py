@@ -45,19 +45,17 @@ class RedObject:
 
 # This allow to randomize the color for children
 def blend_colors(color1, color2):
-    r1, g1, b1 = tk.Color(color1).rgb
-    r2, g2, b2 = tk.Color(color2).rgb
+    r1, g1, b1 = [x//256 for x in app.winfo_rgb(color1)]
+    r2, g2, b2 = [x//256 for x in app.winfo_rgb(color2)]
     blended_r = (r1 + r2) // 2
     blended_g = (g1 + g2) // 2
     blended_b = (b1 + b2) // 2
-    return f'#{blended_r:02x}{blended_g:02x}{blended_b:02x}'
-
+    blended_color = "#{:02x}{:02x}{:02x}".format(blended_r, blended_g, blended_b)
+    return blended_color
 
 # A class that represnets an animal
 class Animal:
     def __init__(self, x, y, color):
-        self.prevx = x
-        self.prevy = y
         self.x = x
         self.y = y
         self.vx = random.randint(-1, 1)
@@ -82,6 +80,7 @@ class Animal:
 
     def eat(self, food):
         self.hunger -= food
+        self.size += 0.1;
         if self.hunger < 0: self.hunger = 0
 
     def damage(self, damage):
@@ -90,8 +89,8 @@ class Animal:
 
     def draw(self):
         global canvas
-        x1, y1 = self.x - 10, self.y - 10
-        x2, y2 = self.x + 10, self.y + 10
+        x1, y1 = self.x - 10 * self.size, self.y - 10 * self.size
+        x2, y2 = self.x + 10 * self.size, self.y + 10 * self.size
         canvas.create_rectangle(x1, y1, x2, y2, fill=self.color, outline=self.color)
 
     def drawSelected(self):
@@ -131,19 +130,15 @@ def collision(obj1, obj2):
     else: return False
 
 # Calculating the distance to another entity
-def calculate_distance(entity, target_entity):
-    target_x, target_y = target_entity.x, target_entity.y
-    direction_x = target_x - entity.x
-    direction_y = target_y - entity.y
-    magnitude = (direction_x ** 2 + direction_y ** 2) ** 0.5
-
-    return magnitude
+def calculate_distance(entity1, entity2, distance_threshold):
+    distance = ((entity1.x - entity2.x) ** 2 + (entity1.y - entity2.y) ** 2) ** 0.5
+    return distance <= distance_threshold
 
 def update_selecing():
     global selectedEntity
 
     # User interface
-    result_label.config(text="Simulation started (Bad food:"+str(len(red_objects))+", Food:"+str(len(blue_objects))+", Entities :" + str(len(entities)) + ", GEN :"+ str(0) +")")
+    result_label.config(text="Simulation started (Bad food:"+str(len(red_objects))+", Food:"+str(len(blue_objects))+", Entities :" + str(len(entities)) +")")
 
     # Allow selecting/unselecting entity
     if selectedEntity is not None:
@@ -151,6 +146,18 @@ def update_selecing():
         info_label.config(text=info_text)
         selectedEntity.drawSelected()
 
+# This function calculates the direction to another entity
+def calculate_direction(entity, target_entity):
+    target_x, target_y = target_entity.x, target_entity.y
+    direction_x = target_x - entity.x
+    direction_y = target_y - entity.y
+    magnitude = (direction_x ** 2 + direction_y ** 2) ** 0.5
+
+    if magnitude != 0:
+        normalized_direction_x = direction_x / magnitude
+        normalized_direction_y = direction_y / magnitude
+        return normalized_direction_x, normalized_direction_y
+    else: return 0, 0
 
 def update_simulation():
     global selectedEntity
@@ -159,7 +166,7 @@ def update_simulation():
         update_selecing()
         app.after(100, update_simulation)
         return
-
+    
     if simulation_running:
         # Reset canvas
         canvas.delete("all")
@@ -176,17 +183,23 @@ def update_simulation():
             entity.age += 1 # Increase the age
 
             # If the entity is dead, remove it
-            if entity.health <= 0 or entity.age >= 200 or entity.hunger > 100: 
+            if entity.health <= 0 or entity.age >= 200 or entity.hunger > 100:
                 entities.remove(entity)
                 if selectedEntity == entity: selectedEntity = None # If the entity is selected, unselect it
 
             # Reproduction
-            for entity_reporduction in entities:
-                if entity != entity_reporduction and entity.hunger < 10 and entity_reporduction.hunger < 10 and calculate_distance(entity, entity_reporduction) == 0:
-                    if collision(entity, entity_reporduction) and random.randint(0, 100) < 5:
+            for entity_reproduction in entities:
+                if entity != entity_reproduction and entity.age >= 30 and entity_reproduction.age >= 30 and entity.age <= 60 and entity_reproduction.age <= 60 and calculate_distance(entity, entity_reproduction, 100):
+                    direction_x, direction_y = calculate_direction(entity, entity_reproduction)
+                    entity.x = direction_x * 2
+                    entity.y = direction_y * 2
+                    
+                    entity_reproduction.x = direction_x * 2
+                    entity_reproduction.y = direction_y * 2
+                    if collision(entity, entity_reproduction) and random.randint(0, 100) < 5:
                         entity.hunger += 10 # Increase the hunger
-                        entity_reporduction.hunger += 10 # Increase the hunger
-                        entities.append(Animal(entity.x + 5, entity.y + 5, blend_colors(entity.color, entity_reporduction.color))) # Reproduce
+                        entity_reproduction.hunger += 10 # Increase the hunger
+                        entities.append(Animal(entity.x + 5, entity.y + 5, blend_colors(entity.color, entity_reproduction.color))) # Reproduce
 
             # Eating
             for b_obj in blue_objects:
