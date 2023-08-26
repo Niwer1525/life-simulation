@@ -161,6 +161,7 @@ def calculate_direction(entity, target_entity):
 
 def update_simulation():
     global selectedEntity
+    global simulation_running
 
     if simulation_paused:
         update_selecing()
@@ -191,11 +192,11 @@ def update_simulation():
             for entity_reproduction in entities:
                 if entity != entity_reproduction and entity.age >= 30 and entity_reproduction.age >= 30 and entity.age <= 60 and entity_reproduction.age <= 60 and calculate_distance(entity, entity_reproduction, 100):
                     direction_x, direction_y = calculate_direction(entity, entity_reproduction)
-                    entity.x = direction_x * 2
-                    entity.y = direction_y * 2
+                    entity.x += direction_x * 2
+                    entity.y += direction_y * 2
                     
-                    entity_reproduction.x = direction_x * 2
-                    entity_reproduction.y = direction_y * 2
+                    entity_reproduction.x -= direction_x * 2
+                    entity_reproduction.y -= direction_y * 2
                     if collision(entity, entity_reproduction) and random.randint(0, 100) < 5:
                         entity.hunger += 10 # Increase the hunger
                         entity_reproduction.hunger += 10 # Increase the hunger
@@ -220,14 +221,22 @@ def start_simulation():
     # Checking if the simulation is already running
     global simulation_running
     global canvas
+
+    # Set thee button text
+    start_button.config(text="Restart simulating")
     
-    if simulation_running: return
+    # Reset the state and set the button text
+    if simulation_running: 
+        simulation_running = False
+        canvas.delete("all")
+    else:
+        # Creating the canvas
+        canvas = tk.Canvas(app, width=CANVAS_WIDTH, height=CANVAS_HEIGHT, bg="#1e1f22", bd=0)
+        canvas.bind("<Button-1>", on_canvas_click)
+        canvas.pack()
+
+    # Set the simulation state
     simulation_running = True
-    
-    # Creating the canvas
-    canvas = tk.Canvas(app, width=CANVAS_WIDTH, height=CANVAS_HEIGHT, bg="#1e1f22", bd=0)
-    canvas.pack()
-    canvas.bind("<Button-1>", on_canvas_click)
 
     #Add randomly food objects
     for _ in range(30): blue_objects.append(BLueObject(random.randint(0, CANVAS_WIDTH), random.randint(0, CANVAS_HEIGHT)))
