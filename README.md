@@ -4,9 +4,9 @@ I wanted to create something in Python, so a friend of mine had this idea and I 
 It's an ultra-simple project reminiscent of "life-simulation." I've read a lot of things about Python, and I did not use pygame for some personal reasons...
 
 ## Features
-Selectable entities
-Pauseable simulation
-A pretty simple but satisfying UI with information
+Selectable entities, <br>
+Pauseable simulation, <br>
+A pretty simple but satisfying UI with information, <br>
 Many entities with:
   - Hunger
   - Health
